@@ -325,7 +325,8 @@ const stopInterval = () => {
 }
 let currentNum, currentPage, pageData,
 currentPush, currentShu, currentArrow, // (A)
-authorName // (B)
+authorName, // (B)
+currentPusher // (C)
 = {};
 const excute = async () => {
 	//console.log("do excute");
@@ -866,3 +867,94 @@ function performFloorCountingAndAuthorHighlighting (pushNode, special) {
 		pushNode.nextSibling.style.backgroundColor = "blue";
 }
 /***********************************************************************************/
+
+document.addEventListener("mousedown", function(event) {
+	if (isInPost()) { // (C) restrict the event listeners to work only in posts
+		// (C) Mouse click may have been disabled due to stop propagation from mouse browsing.
+		// So we must close the menu manually in the onclick event before.
+		// After that, the menu still must be re-shown if the user right click on the screen.
+		if (event.which == 3) {
+			if (isTerm) {
+				document.getElementsByClassName("dropdown-menu DropdownMenu--reset")[0].style.top = event.clientY.toString() + 'px'; // for firefox's lag response
+				document.getElementsByClassName("dropdown-menu DropdownMenu--reset")[0].style.left = event.clientX.toString() + 'px'; // for firefox's lag response
+				document.getElementsByClassName("dropdown-menu DropdownMenu--reset")[0].parentNode.parentNode.style.display = '';
+			} else
+				document.getElementsByClassName("dropdown-menu")[0].style.display = 'block';
+		}
+	}
+});
+document.addEventListener("click", function(event) {
+	if (isInPost() && event.which==1) { // (C) restrict the event listeners to work only in posts
+		// please note we must specify only left click due to Firefox's special mechanism
+		let someMechanismInvoked = false; // define variable
+
+		/******************************* (C) Pusher Highlighting *******************************/
+		let hasHighlightBefore = false;
+		if (find_blu_className(event.target)
+			&& find_bbsrow_root(event.target).style.backgroundColor == "navy") {
+				hasHighlightBefore = true;
+				someMechanismInvoked = true;
+			}
+		if (currentPusher) {
+			// someMechanismInvoked = true;
+			let x = document.getElementsByClassName(currentPusher);
+			for (let i = 0; i < x.length; i++)
+				find_bbsrow_root(x[i]).style.backgroundColor = "black";
+			currentPusher = null;
+		}
+		if (find_blu_className(event.target)
+			&& !hasHighlightBefore) {
+				someMechanismInvoked = true;
+				highlightAllFloorsFromGivenElement(event.target);
+			}
+		/***************************************************************************************/
+
+		// (C) If there is some mechanism invoked, temporarily disable the mouse browsing first.
+		if (someMechanismInvoked)
+			event.stopPropagation();
+		
+		// (C) we must enforce the menu to be closed due to our stopPropagation().
+		if (isTerm)
+			document.getElementsByClassName("dropdown-menu DropdownMenu--reset")[0].parentNode.parentNode.style.display = 'none';
+		else
+			document.getElementsByClassName("dropdown-menu")[0].style.display = 'none';
+	}
+}, true); // (C) Because this is the global listener, we must set the mode to "true" (capture mode).
+// Otherwise the "stop propagation" will occur "after" the click detected by BBSWindow and therefore is useless.
+
+function isInPost() { // (C) just a helper to check if a user is reading articles
+	if (isTerm) {
+		return document.getElementById('mainContainer').children[0].firstChild.firstChild.firstChild.firstChild.firstChild.innerHTML==' 作者 '
+			&& document.getElementById('mainContainer').children[1].firstChild.firstChild.firstChild.firstChild.firstChild.innerHTML==' 標題 '
+			&& document.getElementById('mainContainer').children[2].firstChild.firstChild.firstChild.firstChild.firstChild.innerHTML==' 時間 ';
+	} else {
+		return document.getElementById('mainContainer').children[0].firstChild.innerHTML==' 作者 '
+		&& document.getElementById('mainContainer').children[1].firstChild.innerHTML==' 標題 '
+		&& document.getElementById('mainContainer').children[2].firstChild.innerHTML==' 時間 ';
+	}
+}
+
+/******************************* (C) Pusher Highlighting *******************************/
+function highlightAllFloorsFromGivenElement(element) {
+	let x = document.getElementsByClassName(find_blu_className(element));
+	for (let i = 0; i < x.length; i++)
+		find_bbsrow_root(x[i]).style.backgroundColor = "navy";
+	currentPusher = find_blu_className(element);
+}
+/***************************************************************************************/
+
+function find_blu_className (element) { // (C) for showing which pusher's floor is highlighted
+	while(element && !(element.className&&element.className.startsWith('blu_')))
+		element = element.parentNode;
+	return element ? element.className : null;
+}
+
+function find_bbsrow_root (element) { // (C) find the element used for highlighting all the same pushers
+	while(element && !(element.getAttribute('type')=='bbsrow'&&element.parentNode&&element.parentNode.id=='mainContainer'))
+		element = element.parentNode;
+	return element;
+}
+
+function isPusherId (element) { // (C)(D) to check if a user clicks the user id
+	return find_blu_className(element) && element.className.startsWith("q11 b");
+}
