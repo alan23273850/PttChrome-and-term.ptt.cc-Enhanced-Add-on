@@ -4,8 +4,8 @@
 // @description  new features for PttChrome (show flags features code by osk2/ptt-comment-flag)
 // @version      1.4.5
 // @author       avan
-// @match        iamchucky.github.io/PttChrome/*
-// @match        term.ptt.cc/*
+// @match        https://iamchucky.github.io/PttChrome/*
+// @match        https://term.ptt.cc/
 // @require      https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.min.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/tippy.js/2.5.4/tippy.min.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js
@@ -441,8 +441,11 @@ content: '                 -            ${gmc.get('whenHideAllShowInfo')}';
 		}
 		element = element.nextElementSibling;
 		if (!element) return;
-		if (element.querySelector('span[data-type="bbsline"]')) { //for term.ptt.cc
-			return element.querySelector('span[data-type="bbsline"]');
+		let e = element.querySelector('span[data-type="bbsline"]');
+		let user = e ? e.querySelector('span[class^="q11"]') : null;
+		let name = user ? user.innerHTML.match(/^([^ ]+)[ ]*$/) : null;
+		if (name && name.length > 0) { //for term.ptt.cc
+			return e;
 		} else if (element.classList.toString().match(/blu_[^ ]+/)) {
 			return element;
 		} else {
@@ -468,10 +471,20 @@ content: '                 -            ${gmc.get('whenHideAllShowInfo')}';
 		stopInterval();
 	}
 
-	const checkNode = document.querySelector('span.q2');
-	if (!checkNode || (checkNode && checkNode.innerHTML.length <= 10)) {
+	//const checkNode = document.querySelector('span.q2');
+	const checkNodes = document.querySelectorAll('span.q2');
+	let allShort = true;
+	for (let i in checkNodes) {
+		if (checkNodes[i].innerHTML.length > 10) {
+			allShort = false;
+			break;
+		}
+	}
+	// if (!checkNode || (checkNode && checkNode.innerHTML.length <= 10)) {
+	if (!checkNodes || (checkNodes && allShort)) {
 		chkBlackSpan(true);
 		return;
+		/* I don't know whether this return statement is related to the blacklist or not... */
 	} else {
 		chkBlackSpan();
 	}
@@ -485,8 +498,10 @@ content: '                 -            ${gmc.get('whenHideAllShowInfo')}';
 	allNode = [].filter.call(allNode, (element, index) => {
 		if (element.dataset.type === 'bbsline') { //for term.ptt.cc
 			let user = element.querySelector('span[class^="q11"]'); //ex.1.<span class="q11 b0">USERNAME</span> 2.<span class="q11 b0">USERNAME   </span>
-			let name = user ? user.innerHTML.match(/^([^ ]+)[ ]*$/) : "";
-			name && name.length > 0 ? element.classList.add(`blu_${name[1]}`) : null;
+			if (user && user.previousSibling && (user.previousSibling.innerHTML=='推 '||user.previousSibling.innerHTML=='噓 '||user.previousSibling.innerHTML=='→ ')) {
+				let name = user ? user.innerHTML.match(/^([^ ]+)[ ]*$/) : "";
+				name && name.length > 0 ? element.classList.add(`blu_${name[1]}`) : null;
+			}
 		}
 		let node = element.innerHTML.match('※ 文章網址:');
 		if (node && node.length > 0) {
