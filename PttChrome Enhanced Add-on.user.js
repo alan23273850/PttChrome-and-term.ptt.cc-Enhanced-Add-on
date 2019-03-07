@@ -1,11 +1,15 @@
 // ==UserScript==
-// @name         PttChrome+term.ptt.cc Add-on
-// @namespace    https://greasyfork.org/zh-TW/scripts/372391-pttchrome-add-on-ptt
-// @description  new features for PttChrome (show flags features code by osk2/ptt-comment-flag)
-// @version      1.4.5
-// @author       avan
-// @match        https://iamchucky.github.io/PttChrome/*
-// @match        https://term.ptt.cc/
+// @name         PttChrome and term.ptt.cc Enhanced Add-on
+// @namespace    https://greasyfork.org/zh-TW/scripts/377781-pttchrome-and-term-ptt-cc-enhanced-add-on
+// @supportURL   https://github.com/alan23273850/PttChrome-and-term.ptt.cc-Enhanced-Add-on
+// @description  將 PttChrome Long Change 融入 PttChrome+term.ptt.cc Add-on 之中，以實作出有效率地計算推、噓、箭頭、總樓數之 PC 版腳本，它同時擁有兩支腳本的功能，而且可在 PttChrome 或 term.ptt.cc 執行。
+// @version      1.2.3
+// @license		 MIT
+// @author       alan23273850
+// @compatible   firefox
+// @compatible   chrome (or chromium-based)
+// @include      https://iamchucky.github.io/PttChrome/*
+// @include      https://term.ptt.cc/
 // @require      https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.min.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/tippy.js/2.5.4/tippy.min.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js
