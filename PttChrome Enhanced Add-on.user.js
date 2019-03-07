@@ -26,6 +26,11 @@ let fields = { // Fields object
 		'type': 'checkbox', // Makes this setting a checkbox input
 		'default': true // Default value if user doesn't change it
 	},
+	'isMouseBrowsingFriendly': { // (E) mouse browsing-friendly mode
+		'label': '是否啟用滑鼠瀏覽友善模式', // Appears next to field
+		'type': 'checkbox', // Makes this setting a checkbox input
+		'default': false // Default value if user doesn't change it
+	},
 	'isShowFlags': {
 		'label': '看板內若有IP(ex.Gossiping)，是否依IP顯示國旗', // Appears next to field
 		'type': 'checkbox', // Makes this setting a checkbox input
@@ -327,7 +332,8 @@ let currentNum, currentPage, pageData,
 currentPush, currentShu, currentArrow, // (A)
 authorName, // (B)
 currentPusher, // (C)
-board // (D)
+board, // (D)
+mouseDownTimer // (E)
 = {};
 const excute = async () => {
 	//console.log("do excute");
@@ -873,6 +879,9 @@ function performFloorCountingAndAuthorHighlighting (pushNode, special) {
 
 document.addEventListener("mousedown", function(event) {
 	if (isInPost()) { // (C) restrict the event listeners to work only in posts
+		// (E) Start the timer for the mouse browsing-friendly mode.
+		mouseDownTimer = new Date();
+
 		// (C) Mouse click may have been disabled due to stop propagation from mouse browsing.
 		// So we must close the menu manually in the onclick event before.
 		// After that, the menu still must be re-shown if the user right click on the screen.
@@ -890,6 +899,9 @@ document.addEventListener("click", function(event) {
 	if (isInPost() && event.which==1) { // (C) restrict the event listeners to work only in posts
 		// please note we must specify only left click due to Firefox's special mechanism
 		let someMechanismInvoked = false; // define variable
+
+		// (E) Compute how long the mouse is clicked for the mouse browsing-friendly mode.
+		mouseDownTimer = new Date() - mouseDownTimer;
 
 		/******************************* (D) Dropdown Menu *******************************/
 		let hasMenuBefore = false;
@@ -909,14 +921,18 @@ document.addEventListener("click", function(event) {
 		if (correctElementToEnableMenu) {
 			if (!hasMenuBefore) {
 				someMechanismInvoked = true;
-				openDropdownMenuFromGivenElement(event.target);
+				if (!gmc.get('isMouseBrowsingFriendly')) // (E)
+					openDropdownMenuFromGivenElement(event.target);
+				else if (mouseDownTimer > 150) // (E)
+					openDropdownMenuFromGivenElement(event.target);
 			}
 		}
 		/*********************************************************************************/
 
 		/******************************* (C) Pusher Highlighting *******************************/
 		let hasHighlightBefore = false;
-		if (find_blu_className(event.target) && !isPusherId(event.target)
+		if ((!gmc.get('isMouseBrowsingFriendly') && find_blu_className(event.target) && !isPusherId(event.target)
+			|| gmc.get('isMouseBrowsingFriendly') && isPusherId(event.target)) // (E)
 			&& find_bbsrow_root(event.target).style.backgroundColor == "navy") {
 				hasHighlightBefore = true;
 				someMechanismInvoked = true;
@@ -928,7 +944,8 @@ document.addEventListener("click", function(event) {
 				find_bbsrow_root(x[i]).style.backgroundColor = "black";
 			currentPusher = null;
 		}
-		if (find_blu_className(event.target) && !isPusherId(event.target) && !isClickingMenu
+		if ((!gmc.get('isMouseBrowsingFriendly') && find_blu_className(event.target) && !isPusherId(event.target) && !isClickingMenu
+			|| gmc.get('isMouseBrowsingFriendly') && isPusherId(event.target) && mouseDownTimer<=150) // (E)
 			&& !hasHighlightBefore) {
 				someMechanismInvoked = true;
 				highlightAllFloorsFromGivenElement(event.target);
