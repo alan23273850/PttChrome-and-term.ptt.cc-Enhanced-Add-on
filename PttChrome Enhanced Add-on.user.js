@@ -323,7 +323,10 @@ const stopInterval = () => {
 		clearInterval(timerArray .shift());
 	}
 }
-let currentNum, currentPage, pageData = {};
+let currentNum, currentPage, pageData,
+currentPush, currentShu, currentArrow, // (A)
+authorName // (B)
+= {};
 const excute = async () => {
 	//console.log("do excute");
 	const css = (elements, styles) => {
@@ -504,12 +507,16 @@ content: '                 -            ${gmc.get('whenHideAllShowInfo')}';
 			}
 		}
 		let node = element.innerHTML.match('※ 文章網址:');
+		node = node && node.length > 0 ? node : element.innerHTML.match('※ 發信站:'); // (A)(B)
 		if (node && node.length > 0) {
 			isHasFirst = true;
 			firstNode = firstEl(element);
 			if (firstNode && !firstNode.innerHTML.match(/data-floor/)) {
 				pageData = [];
 				currentNum = -1;
+				currentPush = 0; // (A)
+				currentShu = 0; // (A)
+				currentArrow = 0; // (A)
 			}
 		}
 		if (innerHTMLAll(findAll(element, "span.q2")).match(ipValidation)) {
@@ -564,6 +571,20 @@ content: '                 -            ${gmc.get('whenHideAllShowInfo')}';
 					let upstairsNum = Number(upstairs[0].innerHTML);
 					if (upstairsNum) {
 						currentNum = Number(upstairs[0].innerHTML) + 1;
+						/***************** (A)(B) Floor Counting and Author's Highlighting *****************/
+						let pushNode = upstairs[0].nextSibling;
+						if (isTerm) pushNode = pushNode.firstChild; // format modification for term.ptt.cc
+						performFloorCountingAndAuthorHighlighting (pushNode, false);
+
+						// deal with the currently last floor
+						if (isTerm) pushNode = pushNode.parentElement.parentElement.parentElement.parentElement; // format modification for term.ptt.cc
+						let lastNode = fromPushNodeToLastNode (pushNode);
+						if (lastNode) {
+							pushNode = lastNode.firstChild;
+							if (isTerm) pushNode = pushNode.firstChild.firstChild.firstChild.firstChild; // format modification for term.ptt.cc
+							performFloorCountingAndAuthorHighlighting (pushNode, true);
+						}
+						/***********************************************************************************/
 					}
 				} else if (currentPage) { //非好讀模式才有頁數
 					if (!pageData[currentPage]) pageData[currentPage] = currentNum;
@@ -573,6 +594,11 @@ content: '                 -            ${gmc.get('whenHideAllShowInfo')}';
 				}
 			} else if (isHasFirst && comment === firstNode) {
 				currentNum = 1;
+				/***************** (A)(B) Floor Counting and Author's Highlighting *****************/
+				let pushNode = comment.firstChild;
+				if (isTerm) pushNode = pushNode.firstChild; // format modification for term.ptt.cc
+				performFloorCountingAndAuthorHighlighting (pushNode, true);
+				/***********************************************************************************/
 			} else if (!isHasFirst) {
 				currentNum = 1;
 			}
@@ -787,3 +813,56 @@ el.rel = 'stylesheet';
 el.type = 'text/css';
 el.href = "https://cdnjs.cloudflare.com/ajax/libs/tippy.js/2.5.4/tippy.css";
 document.head.appendChild(el);
+
+/***************** (A)(B) Floor Counting and Author's Highlighting *****************/
+document.addEventListener("mouseover", function(event) {
+	exchangePusherLabel (event.target);
+});
+document.addEventListener("mouseout", function(event) {
+	exchangePusherLabel (event.target);
+});
+function exchangePusherLabel (pushNode) {
+	if ((isTerm && pushNode.parentNode && pushNode.parentNode.previousSibling && pushNode.parentNode.previousSibling.hasAttribute('data-floor') && pushNode.parentNode.firstChild===pushNode
+		|| !isTerm && pushNode.previousSibling && pushNode.previousSibling.hasAttribute('data-floor'))
+		&& pushNode.dataset.label) {
+		let temp = pushNode.innerHTML;
+		pushNode.innerHTML = pushNode.dataset.label;
+		pushNode.dataset.label = temp;
+	}
+}
+function fromPushNodeToLastNode (pushNode) {
+	let lastNode = null;
+	let traversalNode = pushNode.parentElement.nextSibling;
+	while (traversalNode) {
+		if (isTerm && traversalNode.firstChild.firstChild.firstChild.className.startsWith('blu_') || !isTerm && traversalNode.className.startsWith('blu_')) {
+			if (lastNode) {
+				lastNode = null;
+				break;
+			}
+			else
+				lastNode = traversalNode;
+		}
+		traversalNode = traversalNode.nextSibling;
+	}
+	return lastNode;
+}
+function performFloorCountingAndAuthorHighlighting (pushNode, special) {
+	// if (special) currentNum++;
+	if (pushNode.innerHTML == '推 ') {
+		currentPush++;
+		pushNode.dataset.label = `${String(currentPush).padStart(2,0)} 推 `;
+		if (special) currentPush--;
+	} else if (pushNode.innerHTML == '噓 ') {
+		currentShu++;
+		pushNode.dataset.label = `${String(currentShu).padStart(2,0)} 噓 `;
+		if (special) currentShu--;
+	} else if (pushNode.innerHTML == '→ ') {
+		currentArrow++;
+		pushNode.dataset.label = `${String(currentArrow).padStart(2,0)} → `;
+		if (special) currentArrow--;
+	} // Otherwise it is not a pushing floor and no label is produced.
+	// if (special) currentNum--;
+	if (pushNode.nextSibling.innerHTML.trim() == authorName) // author's highlighting
+		pushNode.nextSibling.style.backgroundColor = "blue";
+}
+/***********************************************************************************/
