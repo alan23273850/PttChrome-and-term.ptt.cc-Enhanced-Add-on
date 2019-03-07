@@ -326,10 +326,13 @@ const stopInterval = () => {
 let currentNum, currentPage, pageData,
 currentPush, currentShu, currentArrow, // (A)
 authorName, // (B)
-currentPusher // (C)
+currentPusher, // (C)
+board // (D)
 = {};
 const excute = async () => {
 	//console.log("do excute");
+	authorName = $("span:contains('作者')").first().text().trim().split(' ')[2]; // (D)
+	board = $("span:contains('看板')").first().text().trim().split(" ").pop(); // (D)
 	const css = (elements, styles) => {
 		elements = elements.length ? elements : [elements];
 		elements.forEach(element => {
@@ -888,9 +891,32 @@ document.addEventListener("click", function(event) {
 		// please note we must specify only left click due to Firefox's special mechanism
 		let someMechanismInvoked = false; // define variable
 
+		/******************************* (D) Dropdown Menu *******************************/
+		let hasMenuBefore = false;
+		let correctElementToEnableMenu = isPusherId(event.target) || event.target.previousSibling.innerHTML==' 作者 ';
+		let isClickingMenu = event.target.parentNode.id == 'dropdownMenu';
+		if (correctElementToEnableMenu) {
+			hasMenuBefore = event.target.parentNode.lastChild.id == 'dropdownMenu';
+			someMechanismInvoked = hasMenuBefore;
+		}
+		if (!isClickingMenu) {
+			let dropdownMenu = document.getElementById("dropdownMenu");
+			if (dropdownMenu) {
+				dropdownMenu.parentNode.removeChild(dropdownMenu);
+				// someMechanismInvoked = true;
+			}
+		}
+		if (correctElementToEnableMenu) {
+			if (!hasMenuBefore) {
+				someMechanismInvoked = true;
+				openDropdownMenuFromGivenElement(event.target);
+			}
+		}
+		/*********************************************************************************/
+
 		/******************************* (C) Pusher Highlighting *******************************/
 		let hasHighlightBefore = false;
-		if (find_blu_className(event.target)
+		if (find_blu_className(event.target) && !isPusherId(event.target)
 			&& find_bbsrow_root(event.target).style.backgroundColor == "navy") {
 				hasHighlightBefore = true;
 				someMechanismInvoked = true;
@@ -902,7 +928,7 @@ document.addEventListener("click", function(event) {
 				find_bbsrow_root(x[i]).style.backgroundColor = "black";
 			currentPusher = null;
 		}
-		if (find_blu_className(event.target)
+		if (find_blu_className(event.target) && !isPusherId(event.target) && !isClickingMenu
 			&& !hasHighlightBefore) {
 				someMechanismInvoked = true;
 				highlightAllFloorsFromGivenElement(event.target);
@@ -942,6 +968,56 @@ function highlightAllFloorsFromGivenElement(element) {
 	currentPusher = find_blu_className(element);
 }
 /***************************************************************************************/
+
+/******************************* (D) Dropdown Menu *******************************/
+function openDropdownMenuFromGivenElement(element) {
+	let pusherName = element.innerHTML.trim().split(" ", 1);
+	let tmp = document.createElement("div");
+	tmp.id = "dropdownMenu";
+	tmp.className = "dropdown-content";
+		let tmp1 = document.createElement("a");
+		tmp1.id = "dropdownMenu1";
+		tmp1.target =  "_blank";
+		tmp1.href = "https://www.ptt.cc/bbs/" + board + "/search?q=author:" + pusherName;
+		tmp1.innerHTML = "Search 此板 " + pusherName + " 的文章";
+		let tmp2 = document.createElement("a");
+		tmp2.id = "dropdownMenu2";
+		tmp2.target =  "_blank";
+		tmp2.href = "https://www.ptt.cc/bbs/ALLPOST/search?q=author:" + pusherName;
+		tmp2.innerHTML = "Search ALLPOST 板 " + pusherName + " 的文章";
+		let tmp3 = document.createElement("a");
+		tmp3.id = "dropdownMenu3";
+		tmp3.target =  "_blank";
+		tmp3.href = "https://www.google.com/search?q=site%3Aptt.cc%20" + pusherName;
+		tmp3.innerHTML = "Google PTT " + pusherName;
+		let tmp4 = document.createElement("a");
+		tmp4.id = "dropdownMenu4";
+		tmp4.target =  "_blank";
+		tmp4.href = "https://www.google.com/search?q=" + pusherName;
+		tmp4.innerHTML = "Google " + pusherName;
+	tmp.appendChild(tmp1);
+	tmp.appendChild(document.createElement("br"));
+	tmp.appendChild(tmp2);
+	tmp.appendChild(document.createElement("br"));
+	tmp.appendChild(tmp3);
+	tmp.appendChild(document.createElement("br"));
+	tmp.appendChild(tmp4);
+	element.parentNode.appendChild(tmp);
+	// console.log(floorNode.getBoundingClientRect().bottom);
+	// console.log(tmp.getBoundingClientRect().height);
+	// console.log(document.getElementById("mainContainer").parentNode.getBoundingClientRect().bottom);
+	// console.log(tmp1.getBoundingClientRect().height);
+	if (isTerm) {
+		let floorNode = element;
+		if (floorNode.getBoundingClientRect().bottom + tmp.getBoundingClientRect().height > document.getElementById("mainContainer").parentNode.getBoundingClientRect().bottom - tmp1.getBoundingClientRect().height)
+			document.getElementById("mainContainer").parentNode.scrollTop += floorNode.getBoundingClientRect().bottom + tmp.getBoundingClientRect().height + tmp1.getBoundingClientRect().height - document.getElementById("mainContainer").parentNode.getBoundingClientRect().bottom; // manually scroll down because in the last floor case the webpage doesn't do so.
+	} else {
+		let floorNode = element.parentNode;
+		if (floorNode.getBoundingClientRect().bottom + tmp.getBoundingClientRect().height > document.getElementById("mainContainer").parentNode.getBoundingClientRect().bottom + 3 * tmp1.getBoundingClientRect().height)
+			document.getElementById("mainContainer").parentNode.scrollTop += floorNode.getBoundingClientRect().bottom + tmp.getBoundingClientRect().height - 3 * tmp1.getBoundingClientRect().height - document.getElementById("mainContainer").parentNode.getBoundingClientRect().bottom; // manually scroll down because in the last floor case the webpage doesn't do so.
+	}
+}
+/*********************************************************************************/
 
 function find_blu_className (element) { // (C) for showing which pusher's floor is highlighted
 	while(element && !(element.className&&element.className.startsWith('blu_')))
