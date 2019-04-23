@@ -4,7 +4,7 @@
 // @supportURL   https://github.com/alan23273850/PttChrome-and-term.ptt.cc-Enhanced-Add-on
 // @description  將 PttChrome Long Change 融入 PttChrome+term.ptt.cc Add-on 之中，以實作出有效率地計算推、噓、箭頭、總樓數之 PC 版腳本，它同時擁有兩支腳本的功能，而且可在 PttChrome 或 term.ptt.cc 執行。
 // @version      1.2.3
-// @license		 MIT
+// @license      MIT
 // @author       alan23273850
 // @compatible   firefox
 // @compatible   chrome (or chromium-based)
